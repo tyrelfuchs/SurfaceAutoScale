@@ -3,6 +3,8 @@
 #include <Windows.h>
 #include <shellapi.h>
 #include <wchar.h>   // Include this header for swprintf_s
+#include "DpiHelper.h"
+#include "DpiUtils.h"
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "user32.lib")
@@ -31,14 +33,11 @@ int getNumberOfMonitors() {
 }
 
 void setScaling(int dpiValue) {
-    // Construct the command string with the desired DPI value
-    wchar_t command[256];
-    swprintf_s(command, sizeof(command) / sizeof(wchar_t), L"C:\\AutoScale\\SetDpi.exe");
-    wchar_t parameters[256];
-    swprintf_s(parameters, sizeof(parameters) / sizeof(wchar_t), L"1 %d", dpiValue);
-
-    // Execute the command
-    ShellExecuteW(NULL, L"open", command, parameters, NULL, SW_HIDE);
+    auto displays = GetDisplayData();
+    if (displays.empty() || !DpiValueSupported(dpiValue)) {
+        return;
+    }
+    DpiHelper::SetDPIScaling(displays[0].m_adapterId, displays[0].m_sourceID, dpiValue);
 }
 
 // Variables to track the last known state
