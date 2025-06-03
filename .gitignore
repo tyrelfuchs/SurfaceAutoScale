@@ -1,0 +1,9 @@
+# Ignore compiled binaries
+bin/
+*.exe
+*.obj
+*.pdb
+*.ilk
+
+# VSCode settings
+.vscode/
