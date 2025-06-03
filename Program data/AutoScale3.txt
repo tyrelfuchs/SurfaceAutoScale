@@ -1,0 +1,138 @@
+#include <Windows.h>
+#include <shellapi.h>
+
+#pragma comment(lib, "shell32.lib")
+
+#define WM_TRAYICON (WM_USER + 1)
+#define ID_TRAY_ENABLE 1001
+#define ID_TRAY_DISABLE 1002
+#define ID_TRAY_EXIT 1003
+
+HINSTANCE hInst;
+NOTIFYICONDATA nid;
+bool isEnabled = true;
+
+bool isTabletMode() {
+    return GetSystemMetrics(SM_CONVERTIBLESLATEMODE) == 0;
+}
+
+void setTabletScaling() {
+    WinExec("C:\\AutoScale\\SetDpi.exe 1 200", SW_HIDE);
+}
+
+void setDesktopScaling() {
+    WinExec("C:\\AutoScale\\SetDpi.exe 1 175", SW_HIDE);
+}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    switch (msg) {
+    case WM_CREATE: {
+        ZeroMemory(&nid, sizeof(NOTIFYICONDATA));
+        nid.cbSize = sizeof(NOTIFYICONDATA);
+        nid.hWnd = hwnd;
+        nid.uID = 1;
+        nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+        nid.uCallbackMessage = WM_TRAYICON;
+        nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+        wcscpy_s(nid.szTip, L"AutoScale");
+
+        Shell_NotifyIcon(NIM_ADD, &nid);
+        break;
+    }
+    case WM_TRAYICON: {
+        if (lParam == WM_RBUTTONUP) {
+            HMENU hMenu = CreatePopupMenu();
+            if (isEnabled) {
+                AppendMenu(hMenu, MF_STRING, ID_TRAY_DISABLE, L"Disable");
+            } else {
+                AppendMenu(hMenu, MF_STRING, ID_TRAY_ENABLE, L"Enable");
+            }
+            AppendMenu(hMenu, MF_SEPARATOR, 0, NULL);
+            AppendMenu(hMenu, MF_STRING, ID_TRAY_EXIT, L"Exit");
+
+            POINT pt;
+            GetCursorPos(&pt);
+            SetForegroundWindow(hwnd);
+            TrackPopupMenu(hMenu, TPM_RIGHTBUTTON | TPM_BOTTOMALIGN, pt.x, pt.y, 0, hwnd, NULL);
+            DestroyMenu(hMenu);
+        }
+        break;
+    }
+    case WM_COMMAND: {
+        switch (LOWORD(wParam)) {
+        case ID_TRAY_ENABLE:
+            isEnabled = true;
+            MessageBox(hwnd, L"AutoScale Enabled", L"Status", MB_OK);
+            break;
+        case ID_TRAY_DISABLE:
+            isEnabled = false;
+            MessageBox(hwnd, L"AutoScale Disabled", L"Status", MB_OK);
+            break;
+        case ID_TRAY_EXIT:
+            Shell_NotifyIcon(NIM_DELETE, &nid);
+            PostQuitMessage(0);
+            break;
+        }
+        break;
+    }
+    case WM_DISPLAYCHANGE: {
+        if (isEnabled && GetSystemMetrics(SM_CMONITORS) == 1) { // Only proceed if one monitor is connected
+            int dpiX = GetDeviceCaps(GetDC(NULL), LOGPIXELSX);
+            if (dpiX > 96) { // Checking if DPI is above standard 100%
+                setTabletScaling();
+            } else {
+                setDesktopScaling();
+            }
+        }
+        break;
+    }
+    case WM_DESTROY: {
+        Shell_NotifyIcon(NIM_DELETE, &nid);
+        PostQuitMessage(0);
+        break;
+    }
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+    return 0;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) {
+    hInst = hInstance;
+
+    WNDCLASS wc = { 0 };
+    wc.lpfnWndProc = WndProc;
+    wc.hInstance = hInst;
+    wc.lpszClassName = L"AutoScaleClass";
+    RegisterClass(&wc);
+
+    HWND hwnd = CreateWindow(L"AutoScaleClass", L"AutoScale", WS_OVERLAPPEDWINDOW,
+                             CW_USEDEFAULT, CW_USEDEFAULT, 300, 200,
+                             NULL, NULL, hInst, NULL);
+
+    MSG msg;
+    bool currentMode, lastMode = isTabletMode();
+
+    while (true) {
+        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT)
+                return 0;
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+
+        if (isEnabled) {
+            currentMode = isTabletMode();
+            if (currentMode && !lastMode) {
+                setTabletScaling();
+            } else if (!currentMode && lastMode) {
+                setDesktopScaling();
+            }
+            lastMode = currentMode;
+        }
+
+        Sleep(5000);
+    }
+
+    return 0;
+}
