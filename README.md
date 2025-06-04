@@ -7,7 +7,9 @@ This repository contains a small Windows utility that adjusts the display scalin
 The project was built using MSVC and the Windows SDK. To compile the application yourself, open a Developer Command Prompt for Visual Studio and run:
 
 ```bash
-cl /EHsc src\AutoScale.cpp /link user32.lib gdi32.lib shell32.lib Advapi32.lib
+cl /EHsc src\AutoScale.cpp src\DpiHelper.cpp src\SetDpiWrapper.cpp \
+    /link user32.lib gdi32.lib shell32.lib Advapi32.lib
 ```
 
-The program relies on `SetDpi.exe` (included in `bin`) to change system scaling.
+`SetDpi.exe` is no longer required because the DPI logic is now built into the
+application.
