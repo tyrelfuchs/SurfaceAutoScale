@@ -1,6 +1,6 @@
 # Surface Auto Scale
 
-This repository contains a small Windows utility that adjusts the display scaling based on the number of connected monitors and whether the system is in tablet mode. The main source file is located in the `src` directory and the precompiled binaries are stored in `bin`.
+Surface Auto Scale is a small Windows utility that automatically adjusts the display scaling of your primary monitor. When the device is in tablet mode it increases the DPI to make touch targets larger and reverts when a keyboard or additional monitor is detected. The code reuses functionality from [imniko/SetDPI](https://github.com/imniko/SetDPI) to change the DPI settings programmatically. The source code resides in the `src` directory and the compiled executable can be found in `dist`.
 
 ## Building
 
@@ -13,3 +13,7 @@ cl /EHsc src\AutoScale.cpp src\DpiHelper.cpp src\SetDpiWrapper.cpp \
 
 `SetDpi.exe` is no longer required because the DPI logic is now built into the
 application.
+
+## License
+This project is released under [The Unlicense](LICENSE).
+
