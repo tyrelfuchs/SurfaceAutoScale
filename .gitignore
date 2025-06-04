@@ -4,6 +4,8 @@ bin/
 *.obj
 *.pdb
 *.ilk
+SetDPI.zip
+SetDPI_src/
 
 # VSCode settings
 .vscode/

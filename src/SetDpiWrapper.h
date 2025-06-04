@@ -1,0 +1,1 @@
+void SetDpiForPrimaryDisplay(int dpiValue);
